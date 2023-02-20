@@ -1,11 +1,11 @@
 use once_cell::sync::Lazy;
+use secrecy::ExposeSecret;
 use snail::configuration::{get_configuration, DatabaseSettings};
 use snail::startup::run;
 use snail::telemetry::{get_subscriber, init_subscriber};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
-use secrecy::ExposeSecret;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     let default_filter_level = "info".to_string();
@@ -60,7 +60,6 @@ async fn spawn_app() -> TestApp {
     configuration.database.database_name = Uuid::new_v4().to_string();
 
     let connection_pool = configure_database(&configuration.database).await;
-
     let server = run(listener, connection_pool.clone()).expect("Failed to bind to address");
     let _ = tokio::spawn(server);
 
@@ -72,9 +71,10 @@ async fn spawn_app() -> TestApp {
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
     // Create Database
-    let mut connection = PgConnection::connect(&config.connection_string_without_db().expose_secret())
-        .await
-        .expect("Failed to connect to Postgres.");
+    let mut connection =
+        PgConnection::connect(&config.connection_string_without_db().expose_secret())
+            .await
+            .expect("Failed to connect to Postgres.");
     connection
         .execute(format!(r#"create database "{}";"#, config.database_name).as_str())
         .await
