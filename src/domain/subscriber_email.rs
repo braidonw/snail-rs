@@ -4,7 +4,7 @@ use validator::validate_email;
 pub struct SubscriberEmail(String);
 
 impl SubscriberEmail {
-    fn parse(s: String) -> Result<SubscriberEmail, String> {
+    pub fn parse(s: String) -> Result<SubscriberEmail, String> {
         if validate_email(&s) {
             Ok(Self(s))
         } else {
@@ -48,6 +48,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct ValidEmailFixture(pub String);
 
+    // Updated based on https://github.com/LukeMathWalker/zero-to-production/issues/34#issuecomment-1367346680
     impl quickcheck::Arbitrary for ValidEmailFixture {
         fn arbitrary(g: &mut quickcheck::Gen) -> Self {
             let mut rng = StdRng::seed_from_u64(u64::arbitrary(g));
