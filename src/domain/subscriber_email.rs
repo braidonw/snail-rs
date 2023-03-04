@@ -22,9 +22,10 @@ impl AsRef<str> for SubscriberEmail {
 #[cfg(test)]
 mod tests {
     use crate::domain::SubscriberEmail;
-    use claims::{assert_err, assert_ok};
+    use claims::assert_err;
     use fake::faker::internet::en::SafeEmail;
     use fake::Fake;
+    use rand::{rngs::StdRng, SeedableRng};
 
     #[test]
     fn empty_string_is_rejected() {
@@ -44,10 +45,19 @@ mod tests {
         assert_err!(SubscriberEmail::parse(email));
     }
 
-    #[test]
+    #[derive(Debug, Clone)]
+    struct ValidEmailFixture(pub String);
 
-    fn valid_emails_are_parsed_successfully() {
-        let email = SafeEmail().fake();
-        assert_ok!(SubscriberEmail::parse(email));
+    impl quickcheck::Arbitrary for ValidEmailFixture {
+        fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+            let mut rng = StdRng::seed_from_u64(u64::arbitrary(g));
+            let email = SafeEmail().fake_with_rng(&mut rng);
+            Self(email)
+        }
+    }
+
+    #[quickcheck_macros::quickcheck]
+    fn valid_emails_are_parsed_correctly(valid_email: ValidEmailFixture) {
+        SubscriberEmail::parse(valid_email.0).unwrap();
     }
 }
